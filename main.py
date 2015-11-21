@@ -1,9 +1,12 @@
+# -*- coding: utf-8 -*-
+
 from bs4 import BeautifulSoup
 from bs4 import element
 from urllib.request import urlopen
 import statistics
 import datetime
 import re
+import unicodedata
 
 mainUrl = "http://www.dream-pro.info/~lavalse/LR2IR/"
 #I'll gonna make some functions for importing suggestion start date and vote start/end date later.
@@ -13,13 +16,7 @@ voteEnd = datetime.date(2015, 11, 27)
 
 #replace fullwidth(Em-size) characters with halfwidth characters
 def replaceEm(comment):
-    if comment is None:
-        return ""
-    else:
-        replaceList = [('１','1'),('２','2'),('３','3'),('４','4'),('５','5'),('６','6'),('７','7'),('８','8'),('９','9'),('０','0'),('（','('),('）',')'),('　',' ')]
-        for replaceSet in replaceList:
-            comment = comment.replace(replaceSet[0], replaceSet[1])
-        return comment
+    return unicodedata.normalize("NFKC", comment or "")
 
 #convert string "YYYY/MM/DD" to datetime.date(YYYY, MM, DD).
 #avoiding strftime and strptime
@@ -34,14 +31,14 @@ def checkComment(comment):
     checkNo = re.compile("^\(20[0-9]{2}\/([1-9]|0[1-9]|1[12])\/([1-9]|[012][0-9]|3[01])\) *$")
     checkYes = re.compile("^\(20[0-9]{2}\/([1-9]|0[1-9]|1[12])\/([1-9]|[012][0-9]|3[01])\) ?★([1-9]|1[0-9]|2[0-5])(| .*)$")
     try:
-        if checkNo.match(comment) is not None:
+        if checkNo.match(comment):
             temp = comment.find(")")
             commentDate = convertToDate(comment[1:temp])
             if suggStart <= commentDate and commentDate <= voteEnd:
                 return -1
             else:
                 return 0
-        elif checkYes.match(comment) is not None:
+        elif checkYes.match(comment):
             temp = comment.find(")")
             commentDate = convertToDate(comment[1:temp])
             if suggStart <= commentDate and commentDate <= voteEnd:
@@ -67,7 +64,7 @@ def getRate(aUrl):
             pageTables = pageSoup.body.div.div.find_all('table')
             pageTable = pageTables[len(pageTables)-1].find_all('tr')
             # kinda dangerous part. check whether there's players' data table or not
-            if len(pageTable[0].find_all('th'))!=17: 
+            if len(pageTable[0].find_all('th'))!=17:
                 break;
             for it in pageTable:
                 pageList = it.find_all('td')
@@ -102,15 +99,15 @@ def main():
                     lList = lChild.find_all('td')
                     if len(lList):
                         res = getRate(lList[2].a['href'])
-                        output.write('"' + lList[2].a.string + '",'+str(res[0]) + ',' + str(res[1]) + ',' + str(res[2]) + '\n')
+                        output.write('"%s",%s,%s,%s\n' % (lList[2].a.string, res[0], res[1], res[2]))
                         #output.write(lList[2].a.string + " Yes: " + str(res[0]) + " No: " + str(res[1]) + " Median : " + str(res[2]) +"\n")
         except:
             print("Failed to load the ★50 Table")
-        
+
         output.close()
     except:
         print("Failed to write the file")
         return
-    
+
 
 main()
