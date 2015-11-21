@@ -7,22 +7,49 @@ import statistics
 import datetime
 import re
 import unicodedata
+import argparse
 
 mainUrl = "http://www.dream-pro.info/~lavalse/LR2IR/"
-#I'll gonna make some functions for importing suggestion start date and vote start/end date later.
-suggStart = datetime.date(2015, 11, 7)
-voteStart = datetime.date(2015, 11, 9)
-voteEnd = datetime.date(2015, 11, 27)
 
-#replace fullwidth(Em-size) characters with halfwidth characters
-def replaceEm(comment):
-    return unicodedata.normalize("NFKC", comment or "")
+argParser = argparse.ArgumentParser(description='Date Arguments')
+argParser.add_argument('--date', metavar='date', nargs=2, help = 'vote start date / end date')
+args = argParser.parse_args()
 
 #convert string "YYYY/MM/DD" to datetime.date(YYYY, MM, DD).
 #avoiding strftime and strptime
 def convertToDate(dateString):
     dateList = dateString.split("/")
     return datetime.date(int(dateList[0]), int(dateList[1]), int(dateList[2]))
+
+if args.date is None or len(args.date)!=2:
+    try:
+        dateFile = open('DATE.txt','r')
+        suggStart = convertToDate(dateFile.readline())
+        voteEnd = convertToDate(dateFile.readline())
+        dateFile.close()
+    except:
+        print("Failed to load the start/end date(DATE.txt)")
+        exit()
+else:
+    suggStart = convertToDate(args.date[0])
+    voteEnd = convertToDate(args.date[1])
+
+blackList=set()
+
+def makeBlackList():
+    try:
+        file = open('BLACKLIST.txt','r')
+        while True:
+            line = file.readline()
+            if line == '':
+                break
+            blackList.add( str(int(line)) )
+        file.close()
+    except:
+        print("Failed to read the Black List(BLACKLIST.txt)")
+
+
+
 
 #check whether a comment has correct form
 #return value :
@@ -66,17 +93,21 @@ def getRate(aUrl):
             # kinda dangerous part. check whether there's players' data table or not
             if len(pageTable[0].find_all('th'))!=17:
                 break;
-            for it in pageTable:
-                pageList = it.find_all('td')
-                if len(pageList)==1:
-                    #for black list feature in future, use previous_sibling here
-                    comment = replaceEm(pageList[0].string)
-                    checkVal = checkComment(comment)
-                    if checkVal==-1:
-                        no = no+1
-                    elif checkVal>0:
-                        yes = yes+1
-                        yesarr.append(checkVal)
+            for j in range(1, len(pageTable),2):
+                dataRow = pageTable[j]
+                commentRow = pageTable[j+1]
+                #check black list
+                playerID = re.search('[0-9]+',dataRow.a['href']).group(0)
+                if playerID in blackList:
+                    continue
+                #replace fullwidth(Em-size) characters with halfwidth characters
+                comment = unicodedata.normalize("NFKC", commentRow.td.string or "")
+                checkVal = checkComment(comment)
+                if checkVal==-1:
+                    no = no+1
+                elif checkVal>0:
+                    yes = yes+1
+                    yesarr.append(checkVal)
             i = i+1
         med = 0
         if len(yesarr):
@@ -85,6 +116,7 @@ def getRate(aUrl):
     except:
         print("Failed to load the IR page: " + aUrl)
 def main():
+    makeBlackList()
     try:
         output = open('output.csv','w', encoding='UTF-8')
         output.write("Name,Yes,No,Median\n")
@@ -100,7 +132,6 @@ def main():
                     if len(lList):
                         res = getRate(lList[2].a['href'])
                         output.write('"%s",%s,%s,%s\n' % (lList[2].a.string, res[0], res[1], res[2]))
-                        #output.write(lList[2].a.string + " Yes: " + str(res[0]) + " No: " + str(res[1]) + " Median : " + str(res[2]) +"\n")
         except:
             print("Failed to load the ★50 Table")
 
