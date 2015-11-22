@@ -9,7 +9,6 @@ import re
 import unicodedata
 import argparse
 import csv
-import codecs
 
 mainUrl = "http://www.dream-pro.info/~lavalse/LR2IR/"
 
@@ -65,6 +64,7 @@ def checkComment(comment):
             if suggStart <= commentDate and commentDate <= voteEnd:
                 return -1
             else:
+                print(comment)
                 return 0
         elif checkYes.match(comment):
             commentDate = convertToDate(comment[1:comment.find(")")])
@@ -72,6 +72,7 @@ def checkComment(comment):
                 difficulty = re.search("★(1[0-9]|2[0-5]|[1-9])", comment)
                 return int(difficulty.group(1))
             else:
+                print(comment)
                 return 0
         else:
             return 0
@@ -115,28 +116,34 @@ def getRate(aUrl):
         return (yes, no, med)
     except:
         print("Failed to load the IR page: " + aUrl)
+def makeSongList():
+    try:
+        retlist = []
+        lv50Url = mainUrl + 'search.cgi?mode=search&type=insane&exlevel=50&7keys=1'
+        lv50Soup = BeautifulSoup(urlopen(lv50Url), 'html.parser')
+        lv50Table = lv50Soup.body.div.div.table
+
+        for lChild in lv50Table.children:
+        # There could be some white-space NavigateStrings.
+            if isinstance(lChild, element.Tag):
+                lList = lChild.find_all('td')
+                if len(lList):
+                    res = getRate(lList[2].a['href'])
+                    retlist.append( [res[2], lList[2].a.string, res[0], res[1]] )
+        return retlist
+    except:
+        print("Failed to load the ★50 Table")
+        return []
 def main():
     makeBlackList()
+    songList = makeSongList()
+    songList = sorted(songList, key=lambda y:y[0])
     try:
         output = open('output.csv','w', encoding='utf-8-sig', newline='')
-        #output.write(codecs.BOM_UTF8)
         outputWriter = csv.writer(output)
-        outputWriter.writerow(["Name", "Yes", "No", "Median"])
-        try:
-            lv50Url = mainUrl + 'search.cgi?mode=search&type=insane&exlevel=50&7keys=1'
-            lv50Soup = BeautifulSoup(urlopen(lv50Url), 'html.parser')
-            lv50Table = lv50Soup.body.div.div.table
-
-            for lChild in lv50Table.children:
-            # There could be some white-space NavigateStrings.
-                if isinstance(lChild, element.Tag):
-                    lList = lChild.find_all('td')
-                    if len(lList):
-                        res = getRate(lList[2].a['href'])
-                        outputWriter.writerow([lList[2].a.string, res[0], res[1], res[2]])
-        except:
-            print("Failed to load the ★50 Table")
-
+        outputWriter.writerow(["Median", "Name", "Yes", "No"])
+        for it in songList:
+            outputWriter.writerow(it)
         output.close()
     except:
         print("Failed to write the file")

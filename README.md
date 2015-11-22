@@ -6,17 +6,26 @@ Made by rbtree( http://github.com/jhs7jhs / https://twitter.com/RBTree_Pg )
 * What is GENOCIDE hakkyou vote?: http://nekokan.dyndns.info/~lobsak/genocide/about.html
 * Unicode issue couldn't be resolved: check here http://www.crummy.com/software/BeautifulSoup/bs4/doc/#encodings
 
-Requirement:
+#### In the Future:
+- Median analysis feature
+- Sort flags
+
+#### Requirement:
 - Beautiful Soup 4(http://www.crummy.com/software/BeautifulSoup/)
 - Python 3x
 
-Version 0.6.5:
+## History
+
+#### Version 0.6.6:
+* sort by median(level) value
+
+#### Version 0.6.5:
 * csv issues fixed
     * using csv lib now!
 	* encoding changed from utf-8 to utf-8-sig (utf-8 w/ BOM)
 * By the rule of hakkyou vote, program calculates the high median.
 
-Version 0.6:
+#### Version 0.6:
 * '--date' flag:
     * w/ flag: start date and end date would be args
         * example(in command line): python main.py --date 2015/11/07 2015/11/27
@@ -24,7 +33,7 @@ Version 0.6:
 * BAN list:
     * put LR2ID in the BLACKLIST.txt to except players from the vote counting
 
-Version 0.5:
+#### Version 0.5:
 * suggStart, voteStart, voteEnd values should be manually changed by users.
 * output will be stored in output.csv (csv file format)
 * may contain many bugs...
