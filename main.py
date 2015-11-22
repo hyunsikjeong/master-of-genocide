@@ -8,6 +8,8 @@ import datetime
 import re
 import unicodedata
 import argparse
+import csv
+import codecs
 
 mainUrl = "http://www.dream-pro.info/~lavalse/LR2IR/"
 
@@ -59,15 +61,13 @@ def checkComment(comment):
     checkYes = re.compile("^\(20[0-9]{2}\/([1-9]|0[1-9]|1[12])\/([1-9]|[012][0-9]|3[01])\) ?★([1-9]|1[0-9]|2[0-5])(| .*)$")
     try:
         if checkNo.match(comment):
-            temp = comment.find(")")
-            commentDate = convertToDate(comment[1:temp])
+            commentDate = convertToDate(comment[1:comment.find(")")])
             if suggStart <= commentDate and commentDate <= voteEnd:
                 return -1
             else:
                 return 0
         elif checkYes.match(comment):
-            temp = comment.find(")")
-            commentDate = convertToDate(comment[1:temp])
+            commentDate = convertToDate(comment[1:comment.find(")")])
             if suggStart <= commentDate and commentDate <= voteEnd:
                 difficulty = re.search("★(1[0-9]|2[0-5]|[1-9])", comment)
                 return int(difficulty.group(1))
@@ -90,7 +90,7 @@ def getRate(aUrl):
             pageSoup = BeautifulSoup(urlopen(irUrl+"&page="+str(i)), 'html.parser')
             pageTables = pageSoup.body.div.div.find_all('table')
             pageTable = pageTables[len(pageTables)-1].find_all('tr')
-            # kinda dangerous part. check whether there's players' data table or not
+            # kinda dangerous part. check whether it's players' data table or not
             if len(pageTable[0].find_all('th'))!=17:
                 break;
             for j in range(1, len(pageTable),2):
@@ -111,15 +111,17 @@ def getRate(aUrl):
             i = i+1
         med = 0
         if len(yesarr):
-            med = statistics.median(yesarr)
+            med = statistics.median_high(yesarr)
         return (yes, no, med)
     except:
         print("Failed to load the IR page: " + aUrl)
 def main():
     makeBlackList()
     try:
-        output = open('output.csv','w', encoding='UTF-8')
-        output.write("Name,Yes,No,Median\n")
+        output = open('output.csv','w', encoding='utf-8-sig', newline='')
+        #output.write(codecs.BOM_UTF8)
+        outputWriter = csv.writer(output)
+        outputWriter.writerow(["Name", "Yes", "No", "Median"])
         try:
             lv50Url = mainUrl + 'search.cgi?mode=search&type=insane&exlevel=50&7keys=1'
             lv50Soup = BeautifulSoup(urlopen(lv50Url), 'html.parser')
@@ -131,7 +133,7 @@ def main():
                     lList = lChild.find_all('td')
                     if len(lList):
                         res = getRate(lList[2].a['href'])
-                        output.write('"%s",%s,%s,%s\n' % (lList[2].a.string, res[0], res[1], res[2]))
+                        outputWriter.writerow([lList[2].a.string, res[0], res[1], res[2]])
         except:
             print("Failed to load the ★50 Table")
 

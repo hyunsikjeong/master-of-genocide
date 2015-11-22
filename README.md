@@ -1,11 +1,20 @@
 # master-of-genocide
-Find yes/no/median values of genocide hakkyou vote.
+Find/Calculate statistics of GENOCIDE hakkyou vote.
+
 Made by rbtree( http://github.com/jhs7jhs / https://twitter.com/RBTree_Pg )
-* Unicode issue will be resolved in the future
+
+* What is GENOCIDE hakkyou vote?: http://nekokan.dyndns.info/~lobsak/genocide/about.html
+* Unicode issue couldn't be resolved: check here http://www.crummy.com/software/BeautifulSoup/bs4/doc/#encodings
 
 Requirement:
 - Beautiful Soup 4(http://www.crummy.com/software/BeautifulSoup/)
 - Python 3x
+
+Version 0.6.5:
+* csv issues fixed
+    * using csv lib now!
+	* encoding changed from utf-8 to utf-8-sig (utf-8 w/ BOM)
+* By the rule of hakkyou vote, program calculates the high median.
 
 Version 0.6:
 * '--date' flag:
