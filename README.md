@@ -3,8 +3,9 @@ Find/Calculate statistics of GENOCIDE hakkyou vote.
 
 Made by rbtree( http://github.com/jhs7jhs / https://twitter.com/RBTree_Pg )
 
+F you, CP932 and Shift-JIS.
+
 * What is GENOCIDE hakkyou vote?: http://nekokan.dyndns.info/~lobsak/genocide/about.html
-* Unicode issue couldn't be resolved: check here http://www.crummy.com/software/BeautifulSoup/bs4/doc/#encodings
 
 #### In the Future:
 - Median analysis feature
@@ -15,6 +16,9 @@ Made by rbtree( http://github.com/jhs7jhs / https://twitter.com/RBTree_Pg )
 - Python 3x
 
 ## History
+
+#### Version 0.7:
+* Using CP932 now, and it works nicely. (Do not confuse Shift-JIS with CP932, seriously.)
 
 #### Version 0.6.6:
 * sort by median(level) value

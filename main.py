@@ -62,24 +62,24 @@ def checkComment(comment):
         if checkNo.match(comment):
             commentDate = convertToDate(comment[1:comment.find(")")])
             if suggStart <= commentDate and commentDate <= voteEnd:
-                return -1
+                return (commentDate, -1)
             else:
                 print(comment)
-                return 0
+                return (None, 0)
         elif checkYes.match(comment):
             commentDate = convertToDate(comment[1:comment.find(")")])
             if suggStart <= commentDate and commentDate <= voteEnd:
                 difficulty = re.search("★(1[0-9]|2[0-5]|[1-9])", comment)
-                return int(difficulty.group(1))
+                return (commentDate, int(difficulty.group(1)))
             else:
                 print(comment)
-                return 0
+                return (None, 0)
         else:
-            return 0
+            return (None, 0)
     except:
         print("Failed to check the comment: " + comment)
-        return 0
-#calculate the yes / no / median of one pattern
+        return (None, 0)
+#calculate the yes / no / median / history of one pattern
 def getRate(aUrl):
     irUrl = mainUrl + aUrl
     i = 1
@@ -88,12 +88,12 @@ def getRate(aUrl):
     yesarr = []
     try:
         while True: #traveling pages
-            pageSoup = BeautifulSoup(urlopen(irUrl+"&page="+str(i)), 'html.parser')
+            pageSoup = BeautifulSoup(urlopen(irUrl+"&page="+str(i)), 'html.parser', from_encoding='cp932')
             pageTables = pageSoup.body.div.div.find_all('table')
             pageTable = pageTables[len(pageTables)-1].find_all('tr')
             # kinda dangerous part. check whether it's players' data table or not
             if len(pageTable[0].find_all('th'))!=17:
-                break;
+                break
             for j in range(1, len(pageTable),2):
                 dataRow = pageTable[j]
                 commentRow = pageTable[j+1]
@@ -104,15 +104,27 @@ def getRate(aUrl):
                 #replace fullwidth(Em-size) characters with halfwidth characters
                 comment = unicodedata.normalize("NFKC", commentRow.td.string or "")
                 checkVal = checkComment(comment)
-                if checkVal==-1:
+                if checkVal[1]==-1:
                     no = no+1
-                elif checkVal>0:
+                elif checkVal[1]>0:
                     yes = yes+1
                     yesarr.append(checkVal)
             i = i+1
-        med = 0
+
+        med = -1
         if len(yesarr):
-            med = statistics.median_high(yesarr)
+            yesarr = sorted(yesarr)
+            temparr = []
+            resarr = []
+            for i in range(0, len(yesarr)):
+                if i>0 and yesarr[i][0] > yesarr[i-1][0]:
+                    med = statistics.median_high(temparr)
+                    if len(resarr)==0 or med != resarr[-1][1]:
+                        resarr.append( (yesarr[i-1][0], med))
+                temparr.append(yesarr[i][1])
+            med = statistics.median_high(temparr)
+            if len(resarr)==0 or med != resarr[-1][1]:
+                resarr.append( (yesarr[-1][0], med)) 
         return (yes, no, med)
     except:
         print("Failed to load the IR page: " + aUrl)
@@ -120,9 +132,8 @@ def makeSongList():
     try:
         retlist = []
         lv50Url = mainUrl + 'search.cgi?mode=search&type=insane&exlevel=50&7keys=1'
-        lv50Soup = BeautifulSoup(urlopen(lv50Url), 'html.parser')
+        lv50Soup = BeautifulSoup(urlopen(lv50Url), 'html.parser', from_encoding='cp932')
         lv50Table = lv50Soup.body.div.div.table
-
         for lChild in lv50Table.children:
         # There could be some white-space NavigateStrings.
             if isinstance(lChild, element.Tag):
@@ -134,7 +145,8 @@ def makeSongList():
     except:
         print("Failed to load the ★50 Table")
         return []
-def main():
+
+if __name__ == "__main__":
     makeBlackList()
     songList = makeSongList()
     songList = sorted(songList, key=lambda y:y[0])
@@ -147,7 +159,3 @@ def main():
         output.close()
     except:
         print("Failed to write the file")
-        return
-
-
-main()
