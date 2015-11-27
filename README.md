@@ -8,7 +8,7 @@ F you, CP932 and Shift-JIS.
 * What is GENOCIDE hakkyou vote?: http://nekokan.dyndns.info/~lobsak/genocide/about.html
 
 #### In the Future:
-- Median analysis feature
+- GENOCIDE新規提案投票状況 automatical recording https://goo.gl/JZyPdC
 - Sort flags
 
 #### Requirement:
@@ -16,6 +16,12 @@ F you, CP932 and Shift-JIS.
 - Python 3x
 
 ## History
+
+#### Version 0.8:
+* History log feature added.
+    * Voting status is printed in status.csv / History in history.csv
+	* teian flag '-teian' for printing suggestion date data
+        * example(in command line): python main.py -teian
 
 #### Version 0.7:
 * Using CP932 now, and it works nicely. (Do not confuse Shift-JIS with CP932, seriously.)

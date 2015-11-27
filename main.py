@@ -14,7 +14,9 @@ mainUrl = "http://www.dream-pro.info/~lavalse/LR2IR/"
 
 argParser = argparse.ArgumentParser(description='Date Arguments')
 argParser.add_argument('--date', metavar='date', nargs=2, help = 'vote start date / end date')
+argParser.add_argument('-teian', help = 'flag for printing suggestion date of the patterns', action='store_true')
 args = argParser.parse_args()
+teian = args.teian
 
 #convert string "YYYY/MM/DD" to datetime.date(YYYY, MM, DD).
 #avoiding strftime and strptime
@@ -125,12 +127,13 @@ def getRate(aUrl):
             med = statistics.median_high(temparr)
             if len(resarr)==0 or med != resarr[-1][1]:
                 resarr.append( (yesarr[-1][0], med)) 
-        return (yes, no, med)
+        return (yes, no, med, resarr)
     except:
         print("Failed to load the IR page: " + aUrl)
 def makeSongList():
     try:
         retlist = []
+        histlist = []
         lv50Url = mainUrl + 'search.cgi?mode=search&type=insane&exlevel=50&7keys=1'
         lv50Soup = BeautifulSoup(urlopen(lv50Url), 'html.parser', from_encoding='cp932')
         lv50Table = lv50Soup.body.div.div.table
@@ -140,22 +143,39 @@ def makeSongList():
                 lList = lChild.find_all('td')
                 if len(lList):
                     res = getRate(lList[2].a['href'])
+                    for i in range(0, len(res[3])):
+                        if i:
+                            histlist.append( (res[3][i][0], "★" + str(res[3][i-1][1]) + " → ★" + str(res[3][i][1]) + " " + lList[2].a.string ))
+                        elif teian:
+                            histlist.append( (res[3][i][0], "★" + str(res[3][i][1]) + " " + lList[2].a.string + " 提案" ))
                     retlist.append( [res[2], lList[2].a.string, res[0], res[1]] )
-        return retlist
+        histlist = sorted(histlist)
+        retlist = sorted(retlist)
+        return (retlist, histlist)
     except:
         print("Failed to load the ★50 Table")
-        return []
+        return ([], [])
 
 if __name__ == "__main__":
     makeBlackList()
     songList = makeSongList()
-    songList = sorted(songList, key=lambda y:y[0])
     try:
-        output = open('output.csv','w', encoding='utf-8-sig', newline='')
+        output = open('status.csv','w', encoding='utf-8-sig', newline='')
         outputWriter = csv.writer(output)
         outputWriter.writerow(["Median", "Name", "Yes", "No"])
-        for it in songList:
+        for it in songList[0]:
             outputWriter.writerow(it)
         output.close()
     except:
-        print("Failed to write the file")
+        print("Failed to write the status file")
+    try:
+        output = open('history.csv', 'w', encoding='utf-8-sig', newline='')
+        outputWriter = csv.writer(output)
+        for i in range(0, len( songList[1] )):
+            if i==0 or songList[1][i-1][0] != songList[1][i][0]:
+                outputWriter.writerow( [songList[1][i][0].strftime("%Y/%m/%d"), songList[1][i][1]] )
+            else:
+                outputWriter.writerow( ["", songList[1][i][1]] )
+        output.close()
+    except:
+        print("Failed to write the history file")
